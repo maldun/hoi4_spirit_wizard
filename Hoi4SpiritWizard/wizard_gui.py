@@ -10,7 +10,7 @@ from tkinter import filedialog as tkFileDialog
 from tkinter import messagebox as tkMessageBox 
 from tkinter import simpledialog as tkSimpleDialog
 
-class WizardGui(tk.frame):
+class WizardGui(tk.Frame):
 
     def __init__(self,master=None,**options):
         """
@@ -21,7 +21,7 @@ class WizardGui(tk.frame):
           master: tk master
           options: tk options
         """
-        super(SnakeTomato,self).__init__(master,options)
+        super().__init__(master,options)
         
         # set default states
         #self.setStates()
@@ -35,9 +35,15 @@ class WizardGui(tk.frame):
         #self.setGUI()
         #self.getScratch(self.scratch_file)
 
+    def closeApp(self):
+        """
+        Clean shutdown
+        """
+        self.master.quit()
+
 def runApp():
     root = tk.Tk()
-    app = SnakeTomato(master=root,height=200,width=200)
+    app = WizardGui(master=root,height=200,width=200)
     app.mainloop()
 
 if __name__ == "__main__":
