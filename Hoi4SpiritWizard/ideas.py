@@ -12,17 +12,18 @@ class Idea:
     and is turned into code
     """
     GFX_PREFIX = "GFX_idea_"
-    NAME_KEY = "name"
     IDEAS_KEY = 'ideas'
     COUNTRY_KEY = 'country'
     TEXTURE_FILE_KEY = "texturefile"
     SPRITE_TYPE = "spriteType"
     SPRITE_TYPES = "spriteTypes"
     INDENT = 1*" "
-    YML_SUFF = ".yml"
+    LOC_SUFF = ".yml"
     GFX_SUFF = ".gfx"
     PDX_SUFF = ".txt"
 
+    NAME_KEY = "name"
+    
     GFX_FNAME = "GFXFileName"
     PIC_NAME = "PictureName"
     FULL_NAME = "FullName"
@@ -30,7 +31,7 @@ class Idea:
 
     MISSING_ERROR_MSG = "Error: {} missing!"
 
-    KEYS = {GFX_FNAME, PIC_NAME, FULL_NAME, DESC}
+    KEYS = [GFX_FNAME, PIC_NAME, FULL_NAME, DESC]
     
     def __init__(self, name):
         self.name = name
@@ -83,7 +84,7 @@ class Idea:
         if hasattr(self, self.GFX_FNAME):
             fname = getattr(self, self.GFX_FNAME)
         else:
-            raise AttributeError(f"Error: {self.FNAME} missing!")
+            raise AttributeError(f"Error: {self.GFX_FNAME} missing!")
         if hasattr(self, self.PIC_NAME):
             picture_name = getattr(self, self.PIC_NAME)
         else:
@@ -181,7 +182,7 @@ class IdeaTests(unittest.TestCase):
 
     def test_write_localisation_file(self):
         self.idea.set_dict(self.loc_data)
-        out_file = self.idea.name + Idea.YML_SUFF
+        out_file = self.idea.name + Idea.LOC_SUFF
 
         result = Idea.write_localisation_file([self.idea],out_file).splitlines()
         self.assertTrue(os.path.isfile(out_file))
