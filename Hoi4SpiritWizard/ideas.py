@@ -6,6 +6,48 @@ import shutil
 from Hoi4Converter.converter import list2paradox
 from Hoi4Converter.parser import parse_grammar as code2list
 
+class Modifier:
+    """
+    This class represents modifiers.
+    """
+    MISSING_ERROR_MSG = "Error: Field {} missing!"
+    FIELDS = ["Key", "Value"]
+    NAME = "modifier"
+    def __init__(self, entries):
+        self.keys = {}
+        self.entries = entries
+        self.set_fields(**entries)
+        
+    def set_keys(self):
+        new_keys = {"political_power_cost",
+                    "stability_factor"}
+        self.keys.update(new_keys)
+
+    def to_pdx(self):
+        """
+        Key method to adapt
+        """
+        key = getattr(self, self.FIELDS[0])
+        val = getattr(self, self.FIELDS[1])
+        return [key, [val]]
+    
+    @classmethod
+    def get_name(cls):
+        return cls.NAME
+    
+    @classmethod
+    def get_fields(cls):
+        return cls.FIELDS
+
+    def set_fields(self, **kwargs):
+        for key in self.FIELDS:
+            if key in kwargs.keys():
+                setattr(self, key, kwargs[key])
+            else:
+                raise Exception(self.MISSING_ERROR_MSG.format(key))
+
+    
+        
 class Idea:
     """
     A class which represents an HOI4 idea 
@@ -32,9 +74,16 @@ class Idea:
     MISSING_ERROR_MSG = "Error: {} missing!"
 
     KEYS = [GFX_FNAME, PIC_NAME, FULL_NAME, DESC]
+
+    # Categories of options
+    MODIFIER = "modifier"
+    TARGETED_MODIFIER = "targeted_modifier"
+
+    CATEGORIES = [Modifier]
     
     def __init__(self, name):
         self.name = name
+        self.category_objs = {}
 
     def create_gfx_object(self, fname, picture_name=None):
         """
@@ -96,11 +145,21 @@ class Idea:
         for key, val in dic.items():
             setattr(self, key, val)
 
+    def set_category_objs(self, category_cls, cobjs):
+        cat_name = category_cls.get_name()
+        self.category_objs[cat_name] = cobjs
+            
     def write_idea_paradox(self):
-        idea_val = ['']
+        idea_val = []
+        for cat in self.CATEGORIES:
+            cat_name = cat.get_name()
+            cobjs = self.category_objs[cat_name]
+            cpdx = [cobj.to_pdx() for cobj in cobjs]
+            idea_val += [[cat_name, cpdx]]
+            
         idea_obj = [self.name, idea_val]
         return idea_obj
-
+    
     def write_idea(self, path=''):
         self.write_gfx_file(path=path)
 

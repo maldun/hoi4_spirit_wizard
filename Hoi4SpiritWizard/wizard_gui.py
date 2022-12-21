@@ -23,13 +23,19 @@ class WizardGui(tk.Frame):
           options: tk options
         """
         super().__init__(master,options)
+        # internal dicts
         self.labels = {}
         self.entries = {}
-        # set default states
-        #self.setStates()
-        # Set config file
-        #self.getConfig(config_file_name)
-        #self.setIntervals(self.work_time_in_units,self.pause_time_in_units)
+        self.spacers = []
+        self.cat_add_buttons = {}
+        self.cat_rem_buttons = {}
+        self.cat_start_row = {}
+        self.cat_end_row = {}
+        self.cat_row_dist = {}
+        self.cat_start_col = {}
+        self.cat_end_col = {}
+        self.cat_entries = {}
+        self.category_map = {cat.get_name(): cat for cat in Idea.CATEGORIES}
         
         # Make x Button use inside method
         self.master.protocol("WM_DELETE_WINDOW", self.close_app)
@@ -41,8 +47,15 @@ class WizardGui(tk.Frame):
         self.master.title("HOI4 Idea Wizard")
         self.setup_menu()
         self.set_basic_params(1,1)
+        self.write_button_col = 0
         row, col  = self.set_idea_fields(2,1)
-        self.set_write_button(row+1,col//2 + 1)
+        self.spacer = self.set_label(row, col,"")
+        row += 1;
+        for cat in Idea.CATEGORIES:
+            row, col = self.init_category(cat, row, col)
+        
+        self.set_write_button(row+1,self.write_button_col)
+        
 
 
     def set_basic_params(self, row, col):
@@ -59,20 +72,94 @@ class WizardGui(tk.Frame):
     def set_idea_row(self, row, col, key):
         self.labels[key] = self.set_label(row, col, key)
         self.entries[key] = self.set_entry(row, col + 1)
+
+    def init_category(self, category_cls, row, col):
+        cat_name = category_cls.get_name()
+        self.cat_start_row[cat_name] = row
+        self.cat_start_col[cat_name] = col
+        self.labels[cat_name] = self.set_label(row, col, cat_name + ': ')
+        self.cat_entries[cat_name] = []
+        
+        row += 1; col += 1
+        for i, key in enumerate(category_cls.get_fields()):
+            self.labels[cat_name+key] = self.set_label(row, col+i, key, anchor="center", columnspan=1)
+        row +=1; col += 1
+        self.cat_end_row[cat_name] = row
+        self.cat_end_col[cat_name] = col
+        def add_category_line(): self.add_category_line(category_cls)
+        self.cat_add_buttons[cat_name] = self.set_button(row,col+1,' + ', add_category_line,
+                                                         fg='#00FF00', bg='#000000')
+ 
+        def rem_category_line(): self.rem_category_line(category_cls)
+        self.cat_rem_buttons[cat_name] = self.set_button(row,col+2,' - ', rem_category_line,
+                                                         fg='#FF0000', bg='#000000')
+        
+        self.cat_row_dist[cat_name] = self.cat_end_row[cat_name] - self.cat_start_row[cat_name] 
+        
+        return row + 1, col
+
+    def add_category_line(self, category_cls):
+        cat_name = category_cls.get_name()
+        fields = {}
+        col = self.cat_start_col[cat_name] + 1
+        self.cat_end_row[cat_name] += 1
+        row = self.cat_end_row[cat_name]
+        
+        for i, key in enumerate(category_cls.get_fields()):
+            col += i
+            fields[key] = self.set_entry(row, col, width=20,columnspan=1)
+        col +=1
+        
+        self.cat_entries[cat_name] += [fields]
+        self.cat_add_buttons[cat_name].grid(row=row,column=col+1)
+        self.cat_rem_buttons[cat_name].grid(row=row,column=col+2)
+        self.writeButton.grid(row=self.cat_end_row[cat_name]+1,
+                              column=self.write_button_col)
+    
+    def rem_category_line(self, category_cls):
+        cat_name = category_cls.get_name()
+        if self.cat_end_row[cat_name] - self.cat_start_row[cat_name] <= self.cat_row_dist[cat_name]:
+            return 
+        entries = self.cat_entries[cat_name].pop()
+        for entry in entries.values():
+            self.remove(entry)
+        self.cat_end_row[cat_name] -= 1
+        row = self.cat_end_row[cat_name]
+        col = self.cat_end_col[cat_name]
+        self.cat_add_buttons[cat_name].grid(row=row,column=col+1)
+        self.cat_rem_buttons[cat_name].grid(row=row,column=col+2)
+
+    def write_category(self, category_cls):
+        cat_name = category_cls.get_name()
+        entry_rows = self.cat_entries[cat_name]
+        cobjs = []
+        for entry_row in entry_rows:
+            cobjs += [category_cls({key:val.get() for key,val in entry_row.items()})]
+        self.idea.set_category_objs(category_cls, cobjs)
         
         
-    def set_entry(self,row,col, master = None):
+    def set_entry(self,row,col, master = None, columnspan=2, **kwargs):
         master = self.master if master is None else master
-        entry = tk.Entry(master)
-        entry.grid(row=row,column=col,columnspan=2, rowspan=1)
+        entry = tk.Entry(master,**kwargs)
+        entry.grid(row=row,column=col,columnspan=columnspan, rowspan=1)
         return entry
 
-    def set_label(self,row,col, text, master = None):
+    def set_label(self,row,col, text, master = None, columnspan=1, rowspan=1, **kwargs):
         master = self.master if master is None else master
-        entry = tk.Label(master, text=text)
-        entry.grid(row=row,column=col,columnspan=1, rowspan=1)
+        entry = tk.Label(master, text=text, **kwargs)
+        entry.grid(row=row,column=col,columnspan=columnspan, rowspan=rowspan)
         return entry
 
+    def set_button(self, row, col, text, command, master=None, columnspan=1, rowspan=1,**kwargs):
+        master = self.master if master is None else master
+        button = tk.Button(master, text=text, command=command,**kwargs)
+        button.grid(row=row, column=col, columnspan=columnspan, rowspan=rowspan)
+        return button
+
+    @staticmethod
+    def remove(widget):
+        widget.destroy()
+    
     def set_write_button(self,row,col):
         self.writeButton = tk.Button(self.master, text="Write", command=self.write_idea)
         self.writeButton.grid(row=row,column=col)
@@ -86,6 +173,9 @@ class WizardGui(tk.Frame):
                 return
             else:
                 setattr(self.idea, key, content)
+
+        for category_cls in Idea.CATEGORIES:
+            self.write_category(category_cls)
                 
     def get_file_names(self):
         gfx_file = self.file_prefix + Idea.GFX_SUFF
