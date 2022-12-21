@@ -55,6 +55,7 @@ class WizardGui(tk.Frame):
             row, col = self.init_category(cat, row, col)
         
         self.set_write_button(row+1,self.write_button_col)
+        self.write_button_row = row+1
         
 
 
@@ -75,6 +76,7 @@ class WizardGui(tk.Frame):
 
     def init_category(self, category_cls, row, col):
         cat_name = category_cls.get_name()
+        orig_col = col
         self.cat_start_row[cat_name] = row
         self.cat_start_col[cat_name] = col
         self.labels[cat_name] = self.set_label(row, col, cat_name + ': ')
@@ -87,17 +89,50 @@ class WizardGui(tk.Frame):
         self.cat_end_row[cat_name] = row
         self.cat_end_col[cat_name] = col
         def add_category_line(): self.add_category_line(category_cls)
-        self.cat_add_buttons[cat_name] = self.set_button(row,col+1,' + ', add_category_line,
+        self.cat_add_buttons[cat_name] = self.set_button(row,col,' + ', add_category_line,
                                                          fg='#00FF00', bg='#000000')
  
         def rem_category_line(): self.rem_category_line(category_cls)
-        self.cat_rem_buttons[cat_name] = self.set_button(row,col+2,' - ', rem_category_line,
+        self.cat_rem_buttons[cat_name] = self.set_button(row,col+1,' - ', rem_category_line,
                                                          fg='#FF0000', bg='#000000')
         
-        self.cat_row_dist[cat_name] = self.cat_end_row[cat_name] - self.cat_start_row[cat_name] 
+        self.cat_row_dist[cat_name] = self.cat_end_row[cat_name] - self.cat_start_row[cat_name]
         
-        return row + 1, col
+        return row + 1, orig_col
 
+    def get_categories_below(self, category_cls):
+        cat_name = category_cls.get_name()
+        ind = self.cat_end_row[cat_name]
+        below = [cat for cat in Idea.CATEGORIES if self.cat_start_row[cat.get_name()] >= ind]
+        return below
+
+    def shift_category(self, category_cls, shift=-1):
+        cat_name = category_cls.get_name()
+        cat_srow = self.cat_start_row[cat_name]
+        
+        cat_col = self.cat_start_col[cat_name]
+        # shift labels
+        self.labels[cat_name].grid(row=cat_srow + shift, column=cat_col)
+        for i, key in enumerate(category_cls.get_fields()):
+            self.labels[cat_name+key].grid(row=cat_srow + shift + 1, column=cat_col+1+i)
+        # shift entries
+        entries = self.cat_entries[cat_name]
+        for k,entry in enumerate(entries):
+            for i, key in enumerate(category_cls.get_fields()):
+                entry[key].grid(row=cat_srow+k+shift + 2, column=cat_col+i+1)
+
+        self.cat_add_buttons[cat_name].grid(row=cat_srow+shift+3+len(entries),
+                                            column=cat_col+len(category_cls.get_fields())+1)
+        self.cat_rem_buttons[cat_name].grid(row=cat_srow+shift+3+len(entries),
+                                            column=cat_col+len(category_cls.get_fields())+2)
+        
+        self.cat_start_row[cat_name] += shift
+        self.cat_end_row[cat_name] += shift
+        self.write_button_row += shift
+        self.writeButton.grid(row=self.write_button_row,
+                              column=self.write_button_col) 
+        
+    
     def add_category_line(self, category_cls):
         cat_name = category_cls.get_name()
         fields = {}
@@ -115,6 +150,13 @@ class WizardGui(tk.Frame):
         self.cat_rem_buttons[cat_name].grid(row=row,column=col+2)
         self.writeButton.grid(row=self.cat_end_row[cat_name]+1,
                               column=self.write_button_col)
+
+        below = self.get_categories_below(category_cls)
+        for bcat in below:
+            self.shift_category(bcat,shift=1)
+
+        info = self.writeButton.grid_info()
+        self.writeButton.grid(row=info['row']+1, column=info['column'])
     
     def rem_category_line(self, category_cls):
         cat_name = category_cls.get_name()

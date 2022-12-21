@@ -46,7 +46,11 @@ class Modifier:
             else:
                 raise Exception(self.MISSING_ERROR_MSG.format(key))
 
-    
+class ResearchBonus(Modifier):
+    NAME = "research_bonus"
+
+class TargetedModifier(Modifier):
+    NAME = "targeted_modifier"
         
 class Idea:
     """
@@ -79,7 +83,7 @@ class Idea:
     MODIFIER = "modifier"
     TARGETED_MODIFIER = "targeted_modifier"
 
-    CATEGORIES = [Modifier]
+    CATEGORIES = [Modifier, ResearchBonus]
     
     def __init__(self, name):
         self.name = name
