@@ -145,7 +145,11 @@ class WizardGui(tk.Frame):
         
         for i, key in enumerate(category_cls.get_fields()):
             col += i
-            fields[key] = self.set_entry(row, col, width=20,columnspan=1)
+            if key == "Relation":
+                width=1
+            else:
+                width=20
+            fields[key] = self.set_entry(row, col, width=width,columnspan=1)
         col +=1
         
         self.cat_entries[cat_name] += [fields]

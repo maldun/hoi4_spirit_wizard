@@ -49,8 +49,30 @@ class Modifier:
 class ResearchBonus(Modifier):
     NAME = "research_bonus"
 
+class Rule(Modifier):
+    NAME = "rule"
+
+class OnAdd(Modifier):
+    NAME = "on_add"
+
+class OnRemove(Modifier):
+    NAME = "on_remove"
+
 class TargetedModifier(Modifier):
     NAME = "targeted_modifier"
+
+class Cancel(Modifier):
+    NAME = 'cancel'
+    FIELDS = ["Key", "Relation", "Value"]
+    def to_pdx(self):
+        """
+        Key method to adapt
+        """
+        key = getattr(self, self.FIELDS[0])
+        rel = getattr(self, self.FIELDS[1])
+        val = getattr(self, self.FIELDS[2])
+        return [key, rel, [val]]
+    
         
 class Idea:
     """
@@ -83,7 +105,7 @@ class Idea:
     MODIFIER = "modifier"
     TARGETED_MODIFIER = "targeted_modifier"
 
-    CATEGORIES = [Modifier, ResearchBonus]
+    CATEGORIES = [Modifier, OnAdd, OnRemove, ResearchBonus, Rule, Cancel]
     
     def __init__(self, name):
         self.name = name
@@ -158,6 +180,8 @@ class Idea:
         for cat in self.CATEGORIES:
             cat_name = cat.get_name()
             cobjs = self.category_objs[cat_name]
+            if len(cobjs) == 0:
+                continue
             cpdx = [cobj.to_pdx() for cobj in cobjs]
             idea_val += [[cat_name, cpdx]]
             
@@ -201,6 +225,7 @@ class Idea:
         code = list2paradox(paradox_obj)
         cls.write_file(code, outfile, path=path)
         return paradox_obj
+        
         
 ########################
 # Tests                #
