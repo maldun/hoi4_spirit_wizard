@@ -155,13 +155,15 @@ class WizardGui(tk.Frame):
         for bcat in below:
             self.shift_category(bcat,shift=1)
 
-        info = self.writeButton.grid_info()
-        self.writeButton.grid(row=info['row']+1, column=info['column'])
+        self.write_button_row += 1
+        self.writeButton.grid(row=self.write_button_row,
+                              column=self.write_button_col) 
     
     def rem_category_line(self, category_cls):
         cat_name = category_cls.get_name()
         if self.cat_end_row[cat_name] - self.cat_start_row[cat_name] <= self.cat_row_dist[cat_name]:
-            return 
+            return
+        
         entries = self.cat_entries[cat_name].pop()
         for entry in entries.values():
             self.remove(entry)
@@ -170,6 +172,9 @@ class WizardGui(tk.Frame):
         col = self.cat_end_col[cat_name]
         self.cat_add_buttons[cat_name].grid(row=row,column=col+1)
         self.cat_rem_buttons[cat_name].grid(row=row,column=col+2)
+        self.write_button_row -= 1
+        self.writeButton.grid(row=self.write_button_row,
+                              column=self.write_button_col) 
 
     def write_category(self, category_cls):
         cat_name = category_cls.get_name()
